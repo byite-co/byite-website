@@ -1,0 +1,9 @@
+_build/
+_assets/
+*.zip
+*.tgz
+*.ttf
+node_modules/
+.vercel/
+.DS_Store
+byite-site-files/
