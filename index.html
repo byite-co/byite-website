@@ -40,12 +40,13 @@
 *{box-sizing:border-box}
 body{margin:0;background:var(--void);color:var(--p-ink);font-family:var(--sans);
      font-size:16px;line-height:1.7;word-break:keep-all;-webkit-font-smoothing:antialiased}
+html,body{overflow-x:hidden}
 a{color:inherit}
 :focus-visible{outline:2px solid var(--ring);outline-offset:3px}
 body.drag{user-select:none;-webkit-user-select:none;cursor:grabbing}
 
 /* ============ 스테이지(1화면 · 휠은 페이지 스크롤 전용, 기어는 드래그 전용) ============ */
-#stage{position:relative;height:100vh;min-height:600px;overflow:hidden;background:var(--void)}
+#stage{position:relative;height:100vh;height:100dvh;min-height:560px;overflow:hidden;background:var(--void)}
 .wall{position:absolute;inset:-6% -2%;
   background:
     linear-gradient(rgba(255,255,255,.028) 0 2px, transparent 2px) 0 0 / 100% 46px,
@@ -148,6 +149,34 @@ body:not(.rm) .lit .ring-corex{animation:microflick 9s steps(1) infinite}
   box-shadow:0 0 10px rgba(255,217,160,.35),inset 0 0 10px rgba(255,217,160,.15);
   transition:box-shadow .25s,transform .25s}
 .cta:hover{box-shadow:0 0 18px rgba(255,217,160,.65),inset 0 0 16px rgba(255,217,160,.3);transform:translateY(-1px)}
+
+/* 좌우 화살표 버튼 — 기어 양옆에서 메뉴 전환 */
+.navarrow{position:absolute;top:79%;transform:translateY(-50%);z-index:8;width:44px;height:44px;
+  border-radius:50%;display:grid;place-items:center;padding:0;
+  background:rgba(255,255,255,.02);border:1.5px solid var(--warm);color:var(--warm-core);
+  font-size:15px;line-height:1;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent;
+  box-shadow:0 0 10px rgba(255,217,160,.3),inset 0 0 8px rgba(255,217,160,.12);
+  transition:opacity .25s,box-shadow .25s}
+.navarrow:hover{box-shadow:0 0 16px rgba(255,217,160,.6),inset 0 0 12px rgba(255,217,160,.25)}
+.navarrow.prev{left:-52px}
+.navarrow.next{right:-52px}
+.lit .navarrow[disabled],.navarrow[disabled]{opacity:.22;pointer-events:none;box-shadow:none}
+
+/* 모바일 보정: 틱 숨김·데크 정렬·표 1열·화살표 축소 */
+@media(max-width:700px){
+  .ticks{display:none}
+  .deck{width:min(88vw,640px)}
+  .panel{padding:0 4px}
+  .rows{grid-template-columns:1fr;gap:0;max-width:340px}
+  .hud{padding:20px 18px}
+  .hud nav{gap:16px;letter-spacing:.08em}
+}
+@media(max-width:420px){
+  .navarrow{width:38px;height:38px;font-size:13px}
+  .navarrow.prev{left:-42px}
+  .navarrow.next{right:-42px}
+}
+@media(max-width:374px){.rig{width:236px}}
 
 .hint{position:static;margin:auto 0 0;padding:16px 0 20px;z-index:30;text-align:center;
   font-family:var(--mono);font-size:10.5px;letter-spacing:.3em;color:#6E6180;transition:opacity .6s;pointer-events:none}
@@ -282,6 +311,8 @@ body:not(.rm) .lit .ig{animation:ignite .5s steps(1)}
         </defs>
       </svg>
       <div class="port ig d2"><div class="script">Byite</div></div>
+      <button type="button" class="navarrow prev ig d3" id="btnPrev" aria-label="이전 메뉴">◀</button>
+      <button type="button" class="navarrow next ig d3" id="btnNext" aria-label="다음 메뉴">▶</button>
     </div>
 
     <div class="deck ig d2" id="deck">
@@ -321,7 +352,7 @@ body:not(.rm) .lit .ig{animation:ignite .5s steps(1)}
         <a class="cta" href="https://www.ssambership.com" target="_blank" rel="noopener">SSAMBERSHIP.COM ↗</a>
       </div>
     </div>
-    <div class="hint ig d4" id="hint"><b>DRAG — 톱니바퀴를 돌려 탐색</b><span>◀ ▶</span></div>
+    <div class="hint ig d4" id="hint"><b>◀ ▶ 버튼이나 드래그로 탐색</b></div>
   </div>
 
   <div class="ticks ig d4" id="ticks" aria-hidden="true"><i class="on"></i><i></i><i></i><i></i><i></i></div>
@@ -458,6 +489,7 @@ function setActive(k) {
   active = k;
   panels.forEach(p => p.classList.toggle('on', +p.dataset.i === k));
   ticks.forEach((t, i) => t.classList.toggle('on', i === k));
+  syncBtns();
 }
 function frame() {
   shown += rm ? (target - shown) : (target - shown) * (dragging ? 0.5 : 0.12);
@@ -505,6 +537,16 @@ addEventListener('keydown', e => {
   else if (e.key === 'ArrowLeft') { target = clampT(Math.round(target) - 1); markMoved(); }
   else { const k = +e.key; if (k >= 1 && k <= N) { target = k - 1; markMoved(); } }
 });
+
+/* 좌우 화살표 버튼 */
+const prevB = document.getElementById('btnPrev');
+const nextB = document.getElementById('btnNext');
+prevB.addEventListener('click', () => { target = clampT(Math.round(target) - 1); markMoved(); });
+nextB.addEventListener('click', () => { target = clampT(Math.round(target) + 1); markMoved(); });
+function syncBtns() {
+  prevB.toggleAttribute('disabled', active <= 0);
+  nextB.toggleAttribute('disabled', active >= N - 1);
+}
 
 /* 점화 */
 requestAnimationFrame(() => document.getElementById('stage').classList.add('lit'));
